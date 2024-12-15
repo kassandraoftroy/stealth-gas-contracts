@@ -33,12 +33,28 @@ contract StealthGasTest is Test {
         vm.expectRevert();
         gasStation.buyGasTickets{value: 0.0001 ether}(a);
 
-        uint256 balBefore = owner.balance;
+        bytes32[] memory b = new bytes32[](2);
         vm.expectRevert();
-        gasStation.sendGas(0.0001 ether, owner);
+        gasStation.remitGasTickets(b, a);
 
         vm.prank(owner);
-        gasStation.sendGas(0.0001 ether, owner);
+        gasStation.remitGasTickets(b, a);
+
+        b = new bytes32[](3);
+        vm.expectRevert();
+        vm.prank(owner);
+        gasStation.remitGasTickets(b, a);
+
+        uint256 balBefore = owner.balance;
+        uint256[] memory x = new uint256[](1);
+        x[0] = 0.0001 ether;
+        address[] memory t = new address[](1);
+        t[0] = owner;
+        vm.expectRevert();
+        gasStation.sendGas(x, t);
+
+        vm.prank(owner);
+        gasStation.sendGas(x, t);
 
         assertEq(owner.balance-balBefore, 0.0001 ether);
         assertEq(address(gasStation).balance, 0.0001 ether);
