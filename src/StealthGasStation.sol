@@ -4,39 +4,45 @@ pragma solidity ^0.8.13;
 contract StealthGasStation {
     error WrongValue();
     error OnlyCoordinator();
+    error OnlyAdmin();
     error TransferFailed();
     error LengthMismatch();
+    error Shutdown();
 
     event BuyGasTickets(bytes[] blinded);
-    event RemitGasTickets(bytes32[] hashes, bytes[] signed);
-    event NativeTransfers(uint256[] amounts, address[] targets);
+    event SendGasTickets(bytes32[] ids, bytes[] signed);
+    event NativeTransfers(uint256[] amounts, address[] targets, bytes data);
 
-    address public immutable coordinator;
-    uint256 public immutable ticketSize;
     bytes public coordinatorPubKey;
+    uint256 public immutable ticketSize;
+    address public immutable coordinator;
+    address public immutable admin;
+    bool public ended;
 
-    constructor(address _owner, uint256 _size, bytes memory _pubKey) {
-        coordinator = _owner;
+    constructor(address _coordinator, address _admin, uint256 _size, bytes memory _pubKey) {
+        coordinator = _coordinator;
+        admin = _admin;
         ticketSize = _size;
         coordinatorPubKey = _pubKey;
     }
 
     function buyGasTickets(bytes[] calldata blindedData) payable external {
         if (blindedData.length*ticketSize != msg.value) revert WrongValue();
+        if (ended) revert Shutdown();
 
         emit BuyGasTickets(blindedData);
     }
 
-    function remitGasTickets(bytes32[] calldata hashes, bytes[] calldata blindSigned) external {
+    function sendGasTickets(bytes32[] calldata ids, bytes[] calldata blindSigned) external {
         if (msg.sender != coordinator) revert OnlyCoordinator();
 
-        uint256 len = hashes.length;
+        uint256 len = ids.length;
         if (len != blindSigned.length) revert LengthMismatch();
 
-        emit RemitGasTickets(hashes, blindSigned);
+        emit SendGasTickets(ids, blindSigned);
     }
 
-    function sendGas(uint256[] calldata amounts, address[] calldata targets) external {
+    function sendGas(uint256[] calldata amounts, address[] calldata targets, bytes calldata data) external {
         if (msg.sender != coordinator) revert OnlyCoordinator();
         
         uint256 len = amounts.length;
@@ -47,6 +53,12 @@ contract StealthGasStation {
             if (!success) revert TransferFailed();
         }
 
-        emit NativeTransfers(amounts, targets);
+        emit NativeTransfers(amounts, targets, data);
+    }
+
+    function shutdown() external {
+        if (msg.sender != admin) revert OnlyAdmin();
+        if (ended) revert Shutdown();
+        ended = true;
     }
 }
