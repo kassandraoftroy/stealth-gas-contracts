@@ -13,6 +13,7 @@ contract StealthGasTest is Test {
             coordinator,
             admin,
             10**14,
+            0,
             bytes("abcdefg")
         );
     }
@@ -132,7 +133,33 @@ contract StealthGasTest is Test {
         //
         assertEq(gasStation.coordinator(), coordinator);
         assertEq(gasStation.admin(), admin);
-        assertEq(gasStation.ticketSize(), 10**14);
+        assertEq(gasStation.ticketCost(), 10**14);
+        assertEq(gasStation.shippingCost(), 0);
         assertEq(gasStation.coordinatorPubKey(), bytes("abcdefg"));
+    }
+
+    function test_shippingCost() public {
+        gasStation = new StealthGasStation(
+            coordinator,
+            admin,
+            1 ether,
+            0.001 ether,
+            bytes("abcdefg")
+        );
+
+        bytes[] memory a = new bytes[](2);
+        a[0] = bytes("aaaaaaaa");
+        a[1] = bytes("bbbbbbbb");
+
+        vm.expectRevert();
+        gasStation.buyGasTickets{value: 2 ether}(a);
+
+        gasStation.buyGasTickets{value: 2.001 ether}(a);
+        assertEq(address(gasStation).balance, 2.001 ether);
+
+        a = new bytes[](4);
+
+        gasStation.buyGasTickets{value: 4.001 ether}(a);
+        assertEq(address(gasStation).balance, 6.002 ether);
     }
 }
