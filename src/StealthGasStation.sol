@@ -14,20 +14,29 @@ contract StealthGasStation {
     event NativeTransfers(uint256[] amounts, address[] targets, bytes data);
 
     bytes public coordinatorPubKey;
-    uint256 public immutable ticketSize;
+    uint256 public immutable ticketCost;
+    uint256 public immutable shippingCost;
     address public immutable coordinator;
     address public immutable admin;
     bool public ended;
 
-    constructor(address _coordinator, address _admin, uint256 _size, bytes memory _pubKey) {
+    constructor(
+        address _coordinator,
+        address _admin,
+        uint256 _ticketCost,
+        uint256 _shippingCost,
+        bytes memory _pubKey
+    ) {
+        if (_ticketCost == 0) revert();
         coordinator = _coordinator;
         admin = _admin;
-        ticketSize = _size;
+        ticketCost = _ticketCost;
+        shippingCost = _shippingCost;
         coordinatorPubKey = _pubKey;
     }
 
     function buyGasTickets(bytes[] calldata blindedData) payable external {
-        if (blindedData.length*ticketSize != msg.value) revert WrongValue();
+        if (blindedData.length*ticketCost+shippingCost != msg.value) revert WrongValue();
         if (ended) revert Shutdown();
 
         emit BuyGasTickets(blindedData);

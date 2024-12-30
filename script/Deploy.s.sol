@@ -15,7 +15,7 @@ contract DeployScript is Script {
 
     function deploy() public {
         vm.startBroadcast();
-        stealth = new StealthGasStation(owner, owner, 0.00101 ether, pubkey);
+        stealth = new StealthGasStation(owner, owner, 0.001 ether, 0.001 ether, pubkey);
         vm.stopBroadcast();
 
         console2.log("StealthGasStation deployed at: ", address(stealth));
