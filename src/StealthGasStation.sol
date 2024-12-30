@@ -11,13 +11,14 @@ contract StealthGasStation {
 
     event BuyGasTickets(bytes[] blinded);
     event SendGasTickets(bytes32[] ids, bytes[] signed);
-    event NativeTransfers(uint256[] amounts, address[] targets, bytes data);
+    event NativeTransfers(uint256[] amounts, address[] targets, bytes metadata);
 
-    bytes public coordinatorPubKey;
     uint256 public immutable ticketCost;
     uint256 public immutable shippingCost;
-    address public immutable coordinator;
     address public immutable admin;
+    address public immutable coordinator;
+
+    bytes public coordinatorPubKey;
     bool public ended;
 
     constructor(
@@ -51,7 +52,7 @@ contract StealthGasStation {
         emit SendGasTickets(ids, blindSigned);
     }
 
-    function sendGas(uint256[] calldata amounts, address[] calldata targets, bytes calldata data) external {
+    function sendGas(uint256[] calldata amounts, address[] calldata targets, bytes calldata metadata) external {
         if (msg.sender != coordinator) revert OnlyCoordinator();
         
         uint256 len = amounts.length;
@@ -62,7 +63,7 @@ contract StealthGasStation {
             if (!success) revert TransferFailed();
         }
 
-        emit NativeTransfers(amounts, targets, data);
+        emit NativeTransfers(amounts, targets, metadata);
     }
 
     function shutdown() external {
